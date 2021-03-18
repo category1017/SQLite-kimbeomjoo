@@ -4,7 +4,6 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -83,6 +82,28 @@ public class MainActivity extends AppCompatActivity {
 
     //insert버튼 클릭이벤트(아래)
     private void btnInsert() {
+        mButtonInsert.setOnClickListener(v -> {
+            if(mEditTextGrade.getText().toString().isEmpty() || "".equals(mEditTextNumber.getText().toString())){
+                Toast.makeText(getApplicationContext(),"학년/학번 값은 필수입니다.",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            final int grade = Integer.parseInt(mEditTextGrade.getText().toString());
+            final int number = Integer.parseInt(mEditTextNumber.getText().toString());
+            final String name = mEditTextName.getText().toString();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(StudentTable.GRADE,grade);
+            contentValues.put(StudentTable.NUMBER,number);
+            contentValues.put(StudentTable.NAME,name);
+            //insert쿼리 호출
+            insertData(contentValues);
+            //EditText 컴포넌트 입력값 없애기(초기화)
+            clearComponent();
+            //화면 리프레시
+            updateList();
+            //가상키보드 숨기기
+            mIinputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        });
+        /*
         mButtonInsert.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -107,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
                 mIinputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
             }
         });
+        */
     }
     //SQLiteDatabase 템플릿 insert메서드 실행
     private void insertData(ContentValues contentValues) {
@@ -115,6 +137,19 @@ public class MainActivity extends AppCompatActivity {
 
     //delete버튼 클릭이벤트(아래)
     private void btnDelete() {
+        mButtonDelete.setOnClickListener(v -> {
+            if(currentCursorId == -1){
+                Toast.makeText(getApplicationContext(),"선택된 값이 없습니다.",Toast.LENGTH_SHORT).show();
+                return;//선택된 값이 없으면 삭제이벤트는 종료하기
+            }
+            //삭제쿼리 호출
+            deleteData(currentCursorId);
+            //EditText컴포넌트 값 없애기
+            clearComponent();
+            //리사이클러뷰 화면 리프레시(아래)
+            updateList();
+        });
+        /*
         mButtonDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -130,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
                 updateList();
             }
         });
+        */
     }
     //delete버튼에 대한 쿼리
     private void deleteData(int currentCursorId) {
@@ -137,8 +173,24 @@ public class MainActivity extends AppCompatActivity {
         mSqLiteDatabase.delete(StudentTable.TABLE_NAME,StudentTable._ID+"="+currentCursorId,null);
     }
 
+
     //update버튼 클릭이벤트(아래)
     private void btnUpdate() {
+        mButtonUpdate.setOnClickListener(v -> {
+            if(currentCursorId==-1){
+                Toast.makeText(getApplicationContext(),"선택된 값이 없습니다.",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            //DB갱신
+            final int grade = Integer.parseInt(mEditTextGrade.getText().toString());
+            final int number = Integer.parseInt(mEditTextNumber.getText().toString());
+            final String name = mEditTextName.getText().toString();
+            //쿼리메서드 호출
+            updateData(currentCursorId,grade,number,name);
+            //화면 리프레시 재생(아래)
+            updateList();
+        });
+        /*
         mButtonUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -156,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 updateList();
             }
         });
+        */
     }
     //update버튼에 대한 쿼리
     private void updateData(int currentCursorId, int grade, int number, String name) {
@@ -217,6 +270,16 @@ public class MainActivity extends AppCompatActivity {
         //객체 생성
         mRecyclerAdapter = new RecyclerAdapter(mItemList);
         //어댑터의 OnItemClickListener 추가예정...
+        mRecyclerAdapter.setOnItemClickListener((v, position) -> {
+            StudentVO studentVO = (StudentVO) mItemList.get(position);
+            //디버그
+            currentCursorId = studentVO.getmId();
+            Toast.makeText(getApplicationContext(),"현재 선택한 커서레코드 ID는 "+currentCursorId,Toast.LENGTH_SHORT).show();
+            mEditTextGrade.setText(Integer.toString(studentVO.getmGrade()));
+            mEditTextNumber.setText(Integer.toString(studentVO.getmNumber()));
+            mEditTextName.setText(studentVO.getmName());
+        });
+        /*
         mRecyclerAdapter.setOnItemClickListener(new RecyclerAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View v, int position) {
@@ -229,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
                 mEditTextName.setText(studentVO.getmName());
             }
         });
+         */
         //리사이클러뷰xml과 어댑터 바인딩(attach) No adapter attached
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);//리사이클러 뷰의 높이를 고정한다.
